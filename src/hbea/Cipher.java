@@ -1,3 +1,5 @@
+package hbea;
+
 public interface Cipher {
     String encrypt(String plaintext) throws InvalidMessageException; // 64 hex digits
     String decrypt(String cipherHex);
