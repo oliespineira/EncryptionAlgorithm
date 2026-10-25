@@ -1,18 +1,85 @@
 package hbea;
 
+import java.util.Arrays;
+
 public class HbeaCipher extends AbstractBlockCipher {
+    public static final int ROUNDS = 8;
+    public static final int HALF_BITS = 32;
+
+    private final RoundFunction roundFunction;
+    private final int[][] roundKeys;
+
+    public HbeaCipher(String email) {
+        this(email, new Sha256KeyGenerator(), new DesRoundFunction());
+    }
+
+    public HbeaCipher(String email, KeyGenerator keyGenerator, RoundFunction roundFunction) {
+        if (keyGenerator == null || roundFunction == null) {
+            throw new IllegalArgumentException("Key generator and round function must not be null.");
+        }
+        this.roundFunction = roundFunction;
+        int[][] segments = keyGenerator.generateKeySegments(email);
+        this.roundKeys = new int[ROUNDS][];
+        for (int i = 0; i < ROUNDS; i++) {
+            roundKeys[i] = BitUtils.permute(segments[i], HbeaTables.e());
+        }
+    }
+
     @Override
     protected int[] encryptBlock(int[] block64) {
-        throw new UnsupportedOperationException("HbeaCipher is not implemented yet (task 3).");
+        return feistel(block64, roundKeys, roundFunction);
     }
 
     @Override
     protected int[] decryptBlock(int[] block64) {
-        throw new UnsupportedOperationException("HbeaCipher is not implemented yet (task 5).");
+        throw new UnsupportedOperationException("HbeaCipher decryption is not implemented yet (task 5).");
     }
 
     @Override
     public String getName() {
         return "HBEA";
+    }
+
+    public int[] roundKey(int round) {
+        if (round < 1 || round > ROUNDS) {
+            throw new IllegalArgumentException("Round must be between 1 and " + ROUNDS + " (got " + round + ").");
+        }
+        return roundKeys[round - 1].clone();
+    }
+
+    public int[][] trace(int[] block64) {
+        return trace(block64, roundKeys, roundFunction);
+    }
+
+    static int[][] trace(int[] block64, int[][] keys, RoundFunction f) {
+        if (block64 == null || block64.length != BLOCK_BITS) {
+            throw new IllegalArgumentException("Block must be exactly " + BLOCK_BITS + " bits.");
+        }
+        int[] x = BitUtils.permute(block64, HbeaTables.ip());
+        int[] left = Arrays.copyOfRange(x, 0, HALF_BITS);
+        int[] right = Arrays.copyOfRange(x, HALF_BITS, BLOCK_BITS);
+        int[][] states = new int[keys.length + 1][];
+        states[0] = join(left, right);
+        for (int i = 0; i < keys.length; i++) {
+            int[] newRight = BitUtils.xor(left, f.apply(right, keys[i]));
+            left = right;
+            right = newRight;
+            states[i + 1] = join(left, right);
+        }
+        return states;
+    }
+
+    static int[] feistel(int[] block64, int[][] keys, RoundFunction f) {
+        int[][] states = trace(block64, keys, f);
+        int[] last = states[keys.length];
+        int[] swapped = join(Arrays.copyOfRange(last, HALF_BITS, BLOCK_BITS), Arrays.copyOfRange(last, 0, HALF_BITS));
+        return BitUtils.permute(swapped, HbeaTables.fp());
+    }
+
+    private static int[] join(int[] left, int[] right) {
+        int[] out = new int[left.length + right.length];
+        System.arraycopy(left, 0, out, 0, left.length);
+        System.arraycopy(right, 0, out, left.length, right.length);
+        return out;
     }
 }
