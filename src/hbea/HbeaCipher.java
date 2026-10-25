@@ -8,6 +8,7 @@ public class HbeaCipher extends AbstractBlockCipher {
 
     private final RoundFunction roundFunction;
     private final int[][] roundKeys;
+    private final int[][] reversedRoundKeys;
 
     public HbeaCipher(String email) {
         this(email, new Sha256KeyGenerator(), new DesRoundFunction());
@@ -23,6 +24,7 @@ public class HbeaCipher extends AbstractBlockCipher {
         for (int i = 0; i < ROUNDS; i++) {
             roundKeys[i] = BitUtils.permute(segments[i], HbeaTables.e());
         }
+        this.reversedRoundKeys = reverse(roundKeys);
     }
 
     @Override
@@ -32,7 +34,7 @@ public class HbeaCipher extends AbstractBlockCipher {
 
     @Override
     protected int[] decryptBlock(int[] block64) {
-        throw new UnsupportedOperationException("HbeaCipher decryption is not implemented yet (task 5).");
+        return feistel(block64, reversedRoundKeys, roundFunction);
     }
 
     @Override
@@ -49,6 +51,10 @@ public class HbeaCipher extends AbstractBlockCipher {
 
     public int[][] trace(int[] block64) {
         return trace(block64, roundKeys, roundFunction);
+    }
+
+    public int[][] traceDecryption(int[] block64) {
+        return trace(block64, reversedRoundKeys, roundFunction);
     }
 
     static int[][] trace(int[] block64, int[][] keys, RoundFunction f) {
@@ -74,6 +80,14 @@ public class HbeaCipher extends AbstractBlockCipher {
         int[] last = states[keys.length];
         int[] swapped = join(Arrays.copyOfRange(last, HALF_BITS, BLOCK_BITS), Arrays.copyOfRange(last, 0, HALF_BITS));
         return BitUtils.permute(swapped, HbeaTables.fp());
+    }
+
+    static int[][] reverse(int[][] keys) {
+        int[][] reversed = new int[keys.length][];
+        for (int i = 0; i < keys.length; i++) {
+            reversed[i] = keys[keys.length - 1 - i];
+        }
+        return reversed;
     }
 
     private static int[] join(int[] left, int[] right) {
