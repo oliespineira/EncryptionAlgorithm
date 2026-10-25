@@ -97,4 +97,20 @@ class BitUtilsTest {
     void sBoxExampleFromSection44() {
         assertEquals(13, HbeaTables.sBox(0, 1, 6));   // S1[1][6] = 13 (box 0 = S1)
     }
+
+    @Test
+    void xorMatchesSection7TestVector(){
+        // E(R0) XOR RK1 = 3597AFDF5500  (48-bit values from Section 7)
+        int[] eR0 = BitUtils.fromHex("0017FC102800");
+        int[] rk1 = BitUtils.fromHex("358053CF7D00");
+        assertEquals("3597AFDF5500", BitUtils.toHex(BitUtils.xor(eR0, rk1)));
+    }
+
+    @Test
+    void xorLengthErrorHasHelpfulMessage(){
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> BitUtils.xor(new int[32], new int[48]));
+        assertTrue(e.getMessage().contains("same length"));
+    }
+
 }
