@@ -12,6 +12,13 @@ public class Sha256KeyGenerator implements KeyGenerator {
 
     @Override
     public int[][] generateKeySegments(String seed) {
+        if (seed == null) {
+            throw new IllegalArgumentException("Key seed must not be null.");
+        }
+        if (seed.isBlank()) {
+            throw new IllegalArgumentException("Key seed must not be empty or only whitespace.");
+        }
+
         // 1. Normalise the seed: trim spaces + lower case
         String normalised = seed.trim().toLowerCase();
 
