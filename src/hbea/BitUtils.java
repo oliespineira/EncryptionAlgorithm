@@ -6,7 +6,7 @@ package hbea;
  */
 public final class BitUtils {
 
-    /** Private constructor: this class is never instantiated. */
+    /** Private constructor: this class is never instantiated and nobody outside the class can write  new Bitutils()*/
     private BitUtils() { }
 
     /**
@@ -42,7 +42,7 @@ public final class BitUtils {
 
     /** Each byte becomes 8 bits, most significant bit first. */
     public static int[] bytesToBits(byte[] bytes) {
-        int[] bits = new int[bytes.length * 8];
+        int[] bits = new int[bytes.length * 8]; // each byte carries 8 bits so 8*8 is 64.
         for (int i = 0; i < bytes.length; i++) {
             int v = bytes[i] & 0xFF;               // make the byte unsigned (0..255)
             for (int k = 0; k < 8; k++) {
