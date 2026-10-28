@@ -59,17 +59,7 @@ public class DesRoundFunction implements RoundFunction {
     }
 
 
-    /*
-    6 bits in:     0  0 1 1 0  1
-               │  └──┬───┘  │
-               │   column   │
-               └──── row ───┘
 
-        row    = 0 1     = 1
-        column = 0110    = 6
-        S1[1][6]         = 13
-        13 in 4 bits     = 1 1 0 1     ← 4 bits out
-     */
 }
 
 /* Output: no main method; it is exercised by the tests and demos.

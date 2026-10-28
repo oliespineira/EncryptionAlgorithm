@@ -12,13 +12,13 @@ public class EncryptionDemo {
     public static void main(String[] args) {
         HbeaCipher cipher = new HbeaCipher(StudentConfig.EMAIL);
 
-        System.out.println("=== HBEA encryption demo ===");
+        System.out.println(" HBEA encryption demo");
         System.out.println("Key (email): " + StudentConfig.EMAIL);
         System.out.println();
 
         try {
             String name = StudentConfig.FIRST_NAME;
-            System.out.println("--- Block starting with my name: \"" + name + "\" ---");
+            System.out.println("Block starting with my name: \"" + name + "\" ---");
             int[] firstBlock = AbstractBlockCipher.toBlocks(AbstractBlockCipher.prepare(name))[0];
             System.out.println("Block 1 (\"" + name + "\" + NUL padding) = " + BitUtils.toHex(firstBlock));
             int[][] states = cipher.trace(firstBlock);
@@ -44,10 +44,10 @@ public class EncryptionDemo {
 }
 
 /* Output:
-=== HBEA encryption demo ===
+HBEA encryption demo
 Key (email): liglesias.ieu2024@student.ie.edu
 
---- Block starting with my name: "L" ---
+Block starting with my name: "L" ---
 Block 1 ("L" + NUL padding) = 4C00000000000000
 After IP: L = 01000100  R = 00000100
 Round 1: L = 00000100  R = 2BA74364

@@ -3,9 +3,10 @@ package hbea;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * basically does all the work and leaves the actual scrambling to its subclasses.
  * AbstractBlockCipher: the shared "template" for every block cipher in the project.
  *
- * <p>It does all the work that is the same for every algorithm (Section 4.3):
+ * It does all the work that is the same for every algorithm (Section 4.3):
  * validation, padding with NUL, splitting into four 64-bit blocks and hex
  * conversion. The one step that differs, what happens to a single block, is left
  * to subclasses through the abstract methods {@link #encryptBlock(int[])} and
@@ -18,13 +19,13 @@ import java.nio.charset.StandardCharsets;
  */
 public abstract class AbstractBlockCipher implements Cipher {
 
-    // ---------- Constants (Section 4.3) ----------
+    // Constants (extracted from Section 4.3)
 
-    /** Every message is padded to exactly 32 characters = 256 bits. */
+    // Every message is padded to exactly 32 characters = 256 bits.
     protected static final int MESSAGE_LENGTH = 32;
-    /** NUL never appears in valid input, so it can be removed safely after decryption. */
+    // NUL never appears in valid input, so it can be removed safely after decryption.
     protected static final char PAD_CHAR = '\0';
-    /** Lowest and highest printable ASCII codes accepted. */
+    // Lowest and highest printable ASCII codes accepted.
     private static final int MIN_PRINTABLE = 32;
     private static final int MAX_PRINTABLE = 126;
 
@@ -32,7 +33,7 @@ public abstract class AbstractBlockCipher implements Cipher {
     public static final int BLOCK_COUNT = MESSAGE_LENGTH * 8 / BLOCK_BITS;   // 4
     public static final int CIPHER_HEX_LENGTH = MESSAGE_LENGTH * 2;          // 64
 
-    // ---------- The steps every subclass must provide ----------
+    // The steps every subclass must provide
 
     /** Encrypts one 64-bit block. */
     protected abstract int[] encryptBlock(int[] block64);
@@ -40,7 +41,7 @@ public abstract class AbstractBlockCipher implements Cipher {
     /** Decrypts one 64-bit block. */
     protected abstract int[] decryptBlock(int[] block64);
 
-    // ---------- Template methods ----------
+    // template methods
 
     /**
      * Encrypts a text message: validate, pad to 32 characters, turn it into 256
@@ -94,7 +95,7 @@ public abstract class AbstractBlockCipher implements Cipher {
         return unpad(fromBlocks(blocks));
     }
 
-    // ---------- Step 2 helpers: validation and padding (Task 1, TDD) ----------
+    // Step 2 helpers: validation and padding (Task 1, TDD)
 
     /**
      * Checks the rules of Section 4.3. The order matters: the null check must come
@@ -152,7 +153,7 @@ public abstract class AbstractBlockCipher implements Cipher {
         return message.substring(0, end);
     }
 
-    // ---------- Splitting into 64-bit blocks ----------
+    // Splitting into 64-bit blocks
 
     /** Splits a 32-character message into 4 blocks of 64 bits. */
     public static int[][] toBlocks(String message32) {

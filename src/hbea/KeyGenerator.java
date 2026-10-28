@@ -1,6 +1,7 @@
 package hbea;
 
 /**
+ * this is the contract for 'turn the seed into key material'.
  * KeyGenerator: turns a seed (the user's e-mail) into key material.
  *
  * <p>Concepts shown: interface constants. Every field declared in an interface

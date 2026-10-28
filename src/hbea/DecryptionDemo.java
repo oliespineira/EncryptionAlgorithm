@@ -11,14 +11,14 @@ public class DecryptionDemo {
         HbeaCipher sender = new HbeaCipher(StudentConfig.EMAIL);
         HbeaCipher receiver = new HbeaCipher(StudentConfig.EMAIL);   // separate object, same key
 
-        System.out.println("=== HBEA decryption demo ===");
+        System.out.println("HBEA decryption demo");
         System.out.println("Key (email): " + StudentConfig.EMAIL);
         System.out.println();
 
         try {
             String message = "Meet me at the library at 5pm!!!";
             String ciphertext = sender.encrypt(message);
-            System.out.println("--- Full 32-character message ---");
+            System.out.println("Full 32-character message:");
             System.out.println("Plaintext:  " + message);
             System.out.println("Ciphertext: " + ciphertext);
             System.out.println("Decrypted:  " + receiver.decrypt(ciphertext));
@@ -26,7 +26,7 @@ public class DecryptionDemo {
 
             String name = StudentConfig.FIRST_NAME;
             String nameCipher = sender.encrypt(name);
-            System.out.println("--- Block starting with my name: \"" + name + "\" ---");
+            System.out.println("Block starting with my name: \"" + name + "\" ---");
             System.out.println("Ciphertext: " + nameCipher);
             int[] encryptedBlock = BitUtils.fromHex(nameCipher.substring(0, 16));
             int[][] states = receiver.traceDecryption(encryptedBlock);
@@ -57,7 +57,7 @@ public class DecryptionDemo {
 }
 
 /* Output:
-=== HBEA decryption demo ===
+HBEA decryption demo
 Key (email): liglesias.ieu2024@student.ie.edu
 
 --- Full 32-character message ---

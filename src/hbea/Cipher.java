@@ -1,6 +1,7 @@
 package hbea;
 
 /**
+ * This is the contract, all algorithms use this class. they all talk to this and not to an actual algorithm
  * Cipher: the contract every encryption algorithm in the project must follow.
  *
  * <p>The application ({@link SecureMessenger}, {@link Main}) only ever uses this
@@ -13,12 +14,10 @@ package hbea;
 public interface Cipher {
 
     /**
-     * Encrypts a message of 1 to 32 printable ASCII characters.
-     *
+     * Encrypts a message of 1 to 32 printable ASCII characters
      * @param plaintext the message to encrypt
      * @return the ciphertext as 64 uppercase hexadecimal digits
-     * @throws InvalidMessageException if the message is null, empty, too long
-     *                                 or contains a non-printable character
+     * @throws InvalidMessageException if the message is null, empty, too long or contains a non-printable character
      */
     String encrypt(String plaintext) throws InvalidMessageException; // 64 hex digits
 
