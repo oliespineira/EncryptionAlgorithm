@@ -42,7 +42,12 @@ public class HbeaCipher extends AbstractBlockCipher {
         return "HBEA";
     }
 
-    public int[] roundKey(int round) {
+    /**
+     * Returns a COPY of one round key. Package-private on purpose (no "public"):
+     * the key must not be visible outside the hbea package (Section 5.3).
+     * Only the tests, which live in the same package, use it.
+     */
+    int[] roundKey(int round) {
         if (round < 1 || round > ROUNDS) {
             throw new IllegalArgumentException("Round must be between 1 and " + ROUNDS + " (got " + round + ").");
         }

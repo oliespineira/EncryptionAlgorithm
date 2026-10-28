@@ -60,12 +60,35 @@ public abstract class AbstractBlockCipher implements Cipher {
     public static final int BLOCK_COUNT = MESSAGE_LENGTH * 8 / BLOCK_BITS;
     public static final int CIPHER_HEX_LENGTH = MESSAGE_LENGTH * 2;
 
+    /**
+     * Encrypts a text message: validate, pad to 32 characters, turn it into 256 bits,
+     * then hand the bits to the overloaded encrypt(int[]) below.
+     */
     @Override
     public final String encrypt(String plaintext) throws InvalidMessageException {
         String message = prepare(plaintext);
-        int[][] blocks = toBlocks(message);
+        int[] bits256 = BitUtils.bytesToBits(message.getBytes(StandardCharsets.US_ASCII));
+        return encrypt(bits256);
+    }
+
+    /**
+     * OVERLOADED version of encrypt: same name, different parameter type.
+     * Works directly on 256 bits that are already prepared.
+     * This is the "template method": the loop is the same for every cipher,
+     * only encryptBlock(...) changes from one subclass to another.
+     *
+     * @param bits256 exactly 256 bits (each 0 or 1)
+     * @return the ciphertext as 64 uppercase hex digits
+     * @throws IllegalArgumentException if the array is null or not 256 bits long
+     */
+    public final String encrypt(int[] bits256) {
+        if (bits256 == null || bits256.length != BLOCK_COUNT * BLOCK_BITS) {
+            throw new IllegalArgumentException("Expected exactly " + (BLOCK_COUNT * BLOCK_BITS) + " bits.");
+        }
         StringBuilder hex = new StringBuilder();
-        for (int[] block : blocks) {
+        for (int b = 0; b < BLOCK_COUNT; b++) {
+            int[] block = new int[BLOCK_BITS];
+            System.arraycopy(bits256, b * BLOCK_BITS, block, 0, BLOCK_BITS);
             hex.append(BitUtils.toHex(encryptBlock(block)));
         }
         return hex.toString();

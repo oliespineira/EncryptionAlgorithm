@@ -234,7 +234,7 @@ class AbstractBlockCipherTest {
         @Test
         @DisplayName("encrypt rejects an invalid message, decrypt rejects an invalid ciphertext")
         void pipelineRejectsBadInput() {
-            assertThrows(InvalidMessageException.class, () -> cipher.encrypt(null));
+            assertThrows(InvalidMessageException.class, () -> cipher.encrypt((String) null));
             assertThrows(IllegalArgumentException.class, () -> cipher.decrypt("not hex"));
         }
     }
