@@ -60,4 +60,22 @@ class DesRoundFunctionTest {
         assertEquals("00FE2100", BitUtils.toHex(left1));
         assertEquals("0488C614", BitUtils.toHex(right1));
     }
+
+    @Test
+    void wrongSizesRejected() {
+        assertThrows(IllegalArgumentException.class, () -> f.apply(new int[31], new int[48]));
+        assertThrows(IllegalArgumentException.class, () -> f.apply(new int[32], new int[47]));
+        assertThrows(IllegalArgumentException.class, () -> f.substitute(new int[32]));
+    }
 }
+
+/* Test results (JUnit 5):
+PASS  oneFullRound()
+PASS  wrongSizesRejected()
+PASS  sBoxSingleLookupExample()
+PASS  permutationP()
+PASS  expansionOfR0()
+PASS  sBoxOutput()
+PASS  fullRoundFunctionF()
+7 tests successful, 0 failed
+*/

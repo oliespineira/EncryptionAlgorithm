@@ -9,6 +9,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Data integrity (AbstractBlockCipher)")
+/**
+ * Task 1 (TDD): validation, padding and splitting, tested through a tiny
+ * IdentityCipher subclass so that only AbstractBlockCipher's logic is checked.
+ */
 class AbstractBlockCipherTest {
     private static final String FULL_MESSAGE = "Meet me at the library at 5pm!!!";
 
@@ -51,6 +55,13 @@ class AbstractBlockCipherTest {
         }
 
         @Test
+        @DisplayName("A message of 33 characters (one too many) is rejected")
+        void thirtyThreeIsRejected() {
+            assertThrows(InvalidMessageException.class,
+                    () -> AbstractBlockCipher.validate("X".repeat(33)));
+        }
+
+        @Test
         @DisplayName("A message longer than 32 characters is rejected")
         void tooLongIsRejected() {
             String tooLong = FULL_MESSAGE + "X";
@@ -60,7 +71,7 @@ class AbstractBlockCipherTest {
         }
 
         @ParameterizedTest(name = "\"{0}\"")
-        @ValueSource(strings = {"café", "año", "tab\there", "new\nline", "smile ☺"})
+        @ValueSource(strings = {"caf\u00e9", "a\u00f1o", "tab\there", "new\nline", "smile \u263A", "nul\u0000inside", "del\u007F"})
         @DisplayName("A message with a non-printable or non-ASCII character is rejected")
         void invalidCharactersAreRejected(String message) {
             InvalidMessageException e = assertThrows(InvalidMessageException.class,
@@ -83,31 +94,16 @@ class AbstractBlockCipherTest {
     }
 
     @Nested
-    @DisplayName("Short messages: exception, then padding")
+    @DisplayName("Short messages are valid and get padded")
     class ShortMessages {
         @Test
-        @DisplayName("A message shorter than 32 characters raises MessageTooShortException")
-        void shortMessageRaisesException() {
-            MessageTooShortException e = assertThrows(MessageTooShortException.class,
-                    () -> AbstractBlockCipher.requireFullLength("Hello"));
-            assertEquals(5, e.getActualLength());
+        @DisplayName("A message shorter than 32 characters is valid (no exception)")
+        void shortMessageIsValid() {
+            assertDoesNotThrow(() -> AbstractBlockCipher.validate("Hello"));
         }
 
         @Test
-        @DisplayName("MessageTooShortException is a kind of InvalidMessageException (inheritance)")
-        void shortExceptionIsAnInvalidMessageException() {
-            Exception e = new MessageTooShortException(5, 32);
-            assertTrue(e instanceof InvalidMessageException);
-        }
-
-        @Test
-        @DisplayName("A message of 32 characters does not raise the exception")
-        void fullMessageDoesNotRaise() {
-            assertDoesNotThrow(() -> AbstractBlockCipher.requireFullLength(FULL_MESSAGE));
-        }
-
-        @Test
-        @DisplayName("prepare() catches the exception and pads the short message to 32 characters")
+        @DisplayName("prepare() pads a short message to 32 characters with NUL")
         void prepareRecoversByPadding() throws Exception {
             String prepared = AbstractBlockCipher.prepare("Hello");
             assertEquals(32, prepared.length());
@@ -118,7 +114,7 @@ class AbstractBlockCipherTest {
         }
 
         @Test
-        @DisplayName("prepare() leaves a 32-character message unchanged")
+        @DisplayName("prepare() leaves a 32-character message unchanged (no padding)")
         void prepareKeepsFullMessage() throws Exception {
             assertEquals(FULL_MESSAGE, AbstractBlockCipher.prepare(FULL_MESSAGE));
         }
@@ -127,7 +123,15 @@ class AbstractBlockCipherTest {
         @DisplayName("prepare() does not pad an invalid message: the error reaches the caller")
         void prepareDoesNotHideInvalidMessages() {
             assertThrows(InvalidMessageException.class, () -> AbstractBlockCipher.prepare(""));
-            assertThrows(InvalidMessageException.class, () -> AbstractBlockCipher.prepare("café"));
+            assertThrows(InvalidMessageException.class, () -> AbstractBlockCipher.prepare("caf\u00e9"));
+        }
+
+        @Test
+        @DisplayName("A 1-character message is accepted and padded with 31 NULs")
+        void oneCharacterMessage() throws Exception {
+            String prepared = AbstractBlockCipher.prepare("L");
+            assertEquals(32, prepared.length());
+            assertEquals(31, prepared.chars().filter(c -> c == AbstractBlockCipher.PAD_CHAR).count());
         }
     }
 
@@ -204,6 +208,19 @@ class AbstractBlockCipherTest {
         }
 
         @Test
+        @DisplayName("Unicode digits that are not 0-9/A-F are rejected (e.g. Arabic-Indic three)")
+        void unicodeDigitRejected() {
+            String bad = "\u0663" + "0".repeat(63);
+            assertThrows(IllegalArgumentException.class, () -> AbstractBlockCipher.validateCipherHex(bad));
+        }
+
+        @Test
+        @DisplayName("Lower-case hex is accepted")
+        void lowerCaseAccepted() {
+            assertDoesNotThrow(() -> AbstractBlockCipher.validateCipherHex("0123456789abcdef".repeat(4)));
+        }
+
+        @Test
         @DisplayName("64 hex digits are accepted")
         void validHexAccepted() {
             assertDoesNotThrow(() -> AbstractBlockCipher.validateCipherHex("0123456789ABCDEF".repeat(4)));
@@ -234,8 +251,45 @@ class AbstractBlockCipherTest {
         @Test
         @DisplayName("encrypt rejects an invalid message, decrypt rejects an invalid ciphertext")
         void pipelineRejectsBadInput() {
-            assertThrows(InvalidMessageException.class, () -> cipher.encrypt(null));
+            assertThrows(InvalidMessageException.class, () -> cipher.encrypt((String) null));
             assertThrows(IllegalArgumentException.class, () -> cipher.decrypt("not hex"));
         }
     }
 }
+
+/* Test results (JUnit 5):
+PASS  Whole pipeline (with the identity test cipher) > A short message survives encrypt + decrypt with the padding removed
+PASS  Whole pipeline (with the identity test cipher) > encrypt rejects an invalid message, decrypt rejects an invalid ciphertext
+PASS  Whole pipeline (with the identity test cipher) > verifyRoundTrip (default method of Cipher) returns true
+PASS  Whole pipeline (with the identity test cipher) > encrypt returns 64 hex digits
+PASS  Ciphertext format (64 hex digits) > Unicode digits that are not 0-9/A-F are rejected (e.g. Arabic-Indic three)
+PASS  Ciphertext format (64 hex digits) > Lower-case hex is accepted
+PASS  Ciphertext format (64 hex digits) > A ciphertext with the wrong length is rejected
+PASS  Ciphertext format (64 hex digits) > A ciphertext with a non-hex character is rejected
+PASS  Ciphertext format (64 hex digits) > 64 hex digits are accepted
+PASS  Segmentation into 4 blocks of 64 bits > Block 1 of "Meet me ..." is 4D656574206D6520 (spec test vector)
+PASS  Segmentation into 4 blocks of 64 bits > fromBlocks(toBlocks(m)) gives back m
+PASS  Segmentation into 4 blocks of 64 bits > Splitting a message that is not 32 characters is rejected
+PASS  Segmentation into 4 blocks of 64 bits > A 32-character message becomes 4 blocks of 64 bits
+PASS  Padding and unpadding > unpad keeps spaces the user typed (only the padding character is removed)
+PASS  Padding and unpadding > unpad(pad(x)) gives back x
+PASS  Padding and unpadding > pad does not change a message that already has 32 characters
+PASS  Short messages are valid and get padded > prepare() leaves a 32-character message unchanged (no padding)
+PASS  Short messages are valid and get padded > A message shorter than 32 characters is valid (no exception)
+PASS  Short messages are valid and get padded > prepare() pads a short message to 32 characters with NUL
+PASS  Short messages are valid and get padded > prepare() does not pad an invalid message: the error reaches the caller
+PASS  Short messages are valid and get padded > A 1-character message is accepted and padded with 31 NULs
+PASS  Validation of the input message > The boundary characters space (32) and ~ (126) are accepted
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "café"
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "año"
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "tab	here"
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "smile ☺"
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "nul\u0000inside"
+PASS  Validation of the input message > A message with a non-printable or non-ASCII character is rejected > "del\u007f"
+PASS  Validation of the input message > An empty message is rejected
+PASS  Validation of the input message > A message longer than 32 characters is rejected
+PASS  Validation of the input message > A message of 33 characters (one too many) is rejected
+PASS  Validation of the input message > A null message is rejected
+PASS  Validation of the input message > A message of exactly 32 printable characters is accepted
+33 tests successful, 0 failed
+*/

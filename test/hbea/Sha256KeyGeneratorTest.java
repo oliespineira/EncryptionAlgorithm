@@ -14,9 +14,10 @@ import java.util.HexFormat;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/** Task 2 (BDD): Given-When-Then scenarios for SHA-256 key generation. */
 @DisplayName("Feature: SHA-256 key generation")
 class Sha256KeyGeneratorTest {
-    private static final String OFFICIAL_EMAIL = "liglesias.ieu2024@student.ie.edu";
+    private static final String OFFICIAL_EMAIL = StudentConfig.EMAIL;
 
     private static final String VECTOR_EMAIL = "student@student.ie.edu";
     private static final String[] VECTOR_SEGMENTS = {
@@ -78,7 +79,7 @@ class Sha256KeyGeneratorTest {
     @DisplayName("Scenario: the generator matches the spec's test vector")
     class TestVector {
         @Test
-        @DisplayName("Given the email student@student.ie.edu, When the key is generated, Then KS1..KS8 match the expected values")
+        @DisplayName("Given the seed student@student.ie.edu, When the key is generated, Then KS1 is 6C099BA0 and KS1..KS8 match Section 7")
         void matchesKnownSegments() {
             String email = VECTOR_EMAIL;
 
@@ -104,9 +105,30 @@ class Sha256KeyGeneratorTest {
     @DisplayName("Scenario: the email is normalised before hashing")
     class Normalisation {
         @Test
+        @DisplayName("Given \" Student@Student.IE.edu \" (spaces, capitals), When the key is generated, Then the same key is produced (Task 2 spec scenario)")
+        void specNormalisationScenario() {
+            int[][] messy = generator.generateKeySegments(" Student@Student.IE.edu ");
+            assertEquals("6C099BA0", BitUtils.toHex(messy[0]));
+            assertTrue(Arrays.deepEquals(generator.generateKeySegments(VECTOR_EMAIL), messy));
+        }
+
+        @Test
+        @DisplayName("Given a Turkish default locale, When an upper-case e-mail is normalised, Then the key is still the same")
+        void localeDoesNotChangeTheKey() {
+            java.util.Locale original = java.util.Locale.getDefault();
+            try {
+                java.util.Locale.setDefault(java.util.Locale.forLanguageTag("tr-TR"));
+                int[][] turkish = generator.generateKeySegments("STUDENT@STUDENT.IE.EDU");
+                assertEquals("6C099BA0", BitUtils.toHex(turkish[0]));
+            } finally {
+                java.util.Locale.setDefault(original);   // finally: always restore, even if the test fails
+            }
+        }
+
+        @Test
         @DisplayName("Given the same email with capitals and surrounding spaces, When the key is generated, Then it equals the key of the plain email")
         void capitalsAndSpacesGiveTheSameKey() {
-            String messy = "  LIglesias.IEU2024@Student.IE.edu ";
+            String messy = "  " + OFFICIAL_EMAIL.toUpperCase(java.util.Locale.ROOT) + " ";
 
             int[][] fromMessy = generator.generateKeySegments(messy);
             int[][] fromPlain = generator.generateKeySegments(OFFICIAL_EMAIL);
@@ -160,8 +182,8 @@ class Sha256KeyGeneratorTest {
         @Test
         @DisplayName("Given two emails that differ in one character, When their keys are generated, Then many bits change (avalanche effect)")
         void oneCharacterChangesManyBits() {
-            String original = "liglesias.ieu2024@student.ie.edu";
-            String oneCharDifferent = "liglesias.ieu2025@student.ie.edu";
+            String original = "student2024@student.ie.edu";
+            String oneCharDifferent = "student2025@student.ie.edu";
 
             int[][] k1 = generator.generateKeySegments(original);
             int[][] k2 = generator.generateKeySegments(oneCharDifferent);
@@ -222,3 +244,25 @@ class Sha256KeyGeneratorTest {
     }
 }
 
+/* Test results (JUnit 5):
+PASS  Scenario: the demo function verifies the key > Given the official email, When the demo runs, Then it reports the key as verified
+PASS  Scenario: each caller gets its own copy of the key > Given a key that a caller modifies, When the key is generated again, Then the new key is not affected
+PASS  Scenario: an invalid seed is rejected > Given a null, empty or blank seed, When the key is generated, Then an IllegalArgumentException is thrown > seed = "null"
+PASS  Scenario: an invalid seed is rejected > Given a null, empty or blank seed, When the key is generated, Then an IllegalArgumentException is thrown > seed = ""
+PASS  Scenario: an invalid seed is rejected > Given a null, empty or blank seed, When the key is generated, Then an IllegalArgumentException is thrown > seed = " "
+PASS  Scenario: an invalid seed is rejected > Given a null, empty or blank seed, When the key is generated, Then an IllegalArgumentException is thrown > seed = "   "
+PASS  Scenario: an invalid seed is rejected > Given a null, empty or blank seed, When the key is generated, Then an IllegalArgumentException is thrown > seed = "	"
+PASS  Scenario: each user gets a unique key > Given two emails that differ in one character, When their keys are generated, Then many bits change (avalanche effect)
+PASS  Scenario: each user gets a unique key > Given two different emails, When their keys are generated, Then the keys are different
+PASS  Scenario: the same user always gets the same key > Given the same email, When the key is generated twice, Then both keys are identical
+PASS  Scenario: the same user always gets the same key > Given two separate generator objects, When both generate a key for the same email, Then the keys are identical
+PASS  Scenario: the email is normalised before hashing > Given a Turkish default locale, When an upper-case e-mail is normalised, Then the key is still the same
+PASS  Scenario: the email is normalised before hashing > Given " Student@Student.IE.edu " (spaces, capitals), When the key is generated, Then the same key is produced (Task 2 spec scenario)
+PASS  Scenario: the email is normalised before hashing > Given the same email with capitals and surrounding spaces, When the key is generated, Then it equals the key of the plain email
+PASS  Scenario: the generator matches the spec's test vector > Given the seed student@student.ie.edu, When the key is generated, Then KS1 is 6C099BA0 and KS1..KS8 match Section 7
+PASS  Scenario: the generator matches the spec's test vector > Given the test vector key, When KS1 is expanded with E, Then it gives the round key RK1 = 358053CF7D00
+PASS  Scenario: a user generates a key from a valid email > Given a valid email, When the key is generated, Then it has 8 segments of 32 bits
+PASS  Scenario: a user generates a key from a valid email > Given a valid email, When the key is generated, Then KS1..KS8 joined equal SHA-256 of the email
+PASS  Scenario: a user generates a key from a valid email > Given a valid email, When the key is generated, Then every value is a bit (0 or 1)
+19 tests successful, 0 failed
+*/

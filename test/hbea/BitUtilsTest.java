@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** TDD tests for BitUtils (Task 3: XOR + exceptions) and the tables. */
+/** Task 3 (TDD + exceptions): tests for BitUtils.xor, the conversions and the tables. */
 class BitUtilsTest {
 
     // ---------- Task 3: XOR ----------
@@ -113,4 +113,62 @@ class BitUtilsTest {
         assertTrue(e.getMessage().contains("same length"));
     }
 
+
+    // ---------- Defensive checks: clear exceptions instead of crashes ----------
+
+    @Test
+    void conversionsRejectNull() {
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.toHex(null));
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.fromHex(null));
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.bytesToBits(null));
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.bitsToBytes(null));
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.permute(null, HbeaTables.e()));
+    }
+
+    @Test
+    void fromHexRejectsNonHex() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> BitUtils.fromHex("4G"));
+        assertTrue(e.getMessage().contains("not a hex digit"));
+    }
+
+    @Test
+    void permuteRejectsTableBiggerThanInput() {
+        // IP refers to positions up to 64, so it cannot be applied to 32 bits
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.permute(new int[32], HbeaTables.ip()));
+    }
+
+    @Test
+    void wrongBitCountsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.toHex(new int[5]));
+        assertThrows(IllegalArgumentException.class, () -> BitUtils.bitsToBytes(new int[7]));
+    }
+
+    @Test
+    void lowerCaseHexAccepted() {
+        assertEquals("ABCDEF", BitUtils.toHex(BitUtils.fromHex("abcdef")));
+    }
 }
+
+/* Test results (JUnit 5):
+PASS  xorTwiceGivesOriginal()
+PASS  initialPermutationMatchesTestVector()
+PASS  expansionOfKS1GivesRK1()
+PASS  xorDifferentLengthsThrows()
+PASS  xorLengthErrorHasHelpfulMessage()
+PASS  permuteRejectsTableBiggerThanInput()
+PASS  hexRoundTrip()
+PASS  bitsToBytesReversesBytesToBits()
+PASS  xorMatchesSection7TestVector()
+PASS  lowerCaseHexAccepted()
+PASS  finalPermutationUndoesInitialPermutation()
+PASS  xorKnownValues()
+PASS  wrongBitCountsRejected()
+PASS  block1MatchesTestVector()
+PASS  bytesToBitsIsMostSignificantBitFirst()
+PASS  xorNullThrows()
+PASS  fromHexRejectsNonHex()
+PASS  sBoxExampleFromSection44()
+PASS  xorWithItselfGivesZero()
+PASS  conversionsRejectNull()
+20 tests successful, 0 failed
+*/

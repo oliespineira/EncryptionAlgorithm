@@ -1,13 +1,20 @@
 package hbea;
 
 /**
- * The DES-style round function (Section 4.4):
- * F(R, RK) = P( S( E(R) XOR RK ) )
+ * DesRoundFunction: the DES-style round function of Section 4.4,
+ * F(R, RK) = P( S( E(R) XOR RK ) ).
+ *
+ * <p>Concepts shown: implementing the RoundFunction interface with
+ * {@code @Override}. The three steps are separate public methods so that each one
+ * can be unit-tested on its own against Section 7 (Task 4).</p>
  */
 public class DesRoundFunction implements RoundFunction {
 
     @Override
     public int[] apply(int[] right32, int[] roundKey48) {
+        if (right32 == null || right32.length != 32 || roundKey48 == null || roundKey48.length != 48) {
+            throw new IllegalArgumentException("F needs a 32-bit half and a 48-bit round key.");
+        }
         /*This is the round function F. iT takes half of the block (32 bits) and a round key(48 bits) and produces 32 scrambled bits
         *  doesnt do any work by itsef it just runs three methods in a chain, like an assembly line.*/
         int[] expanded = expand(right32);                       // 32 -> 48
@@ -25,6 +32,9 @@ public class DesRoundFunction implements RoundFunction {
 
     /** S: 8 groups of 6 bits, each through its S-box, giving 8 x 4 = 32 bits. */
     public int[] substitute(int[] bits48) {
+        if (bits48 == null || bits48.length != 48) {
+            throw new IllegalArgumentException("The S-boxes need exactly 48 bits.");
+        }
         int[] out = new int[32];// making room for the result
         for (int box = 0; box < 8; box++) {// running for the 8 groups
             int start = box * 6;// each group is 6 bits long, so we multiply by 6 to make enough space. (block zero will have from 0 to 5 and so on.)
@@ -61,3 +71,14 @@ public class DesRoundFunction implements RoundFunction {
         13 in 4 bits     = 1 1 0 1     ← 4 bits out
      */
 }
+
+/* Output: no main method; it is exercised by the tests and demos.
+PASS  oneFullRound()
+PASS  wrongSizesRejected()
+PASS  sBoxSingleLookupExample()
+PASS  permutationP()
+PASS  expansionOfR0()
+PASS  sBoxOutput()
+PASS  fullRoundFunctionF()
+7 tests successful, 0 failed
+*/

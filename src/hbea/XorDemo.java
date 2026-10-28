@@ -10,6 +10,7 @@ public class XorDemo {
         tryXor("Equal lengths", BitUtils.fromHex("F0"), BitUtils.fromHex("3C"));
         tryXor("Different lengths", new int[32], new int[48]);
         tryXor("Null input", null, new int[32]);
+        tryXor("Spec vector E(R0) XOR RK1", BitUtils.fromHex("0017FC102800"), BitUtils.fromHex("358053CF7D00"));
         System.out.println("Program finished normally.");
     }
 
@@ -28,5 +29,6 @@ public class XorDemo {
 Equal lengths -> OK: CC
 Different lengths -> handled error: xor: arrays must have the same length (32 vs 48).
 Null input -> handled error: xor: arrays must not be null.
+Spec vector E(R0) XOR RK1 -> OK: 3597AFDF5500
 Program finished normally.
 */

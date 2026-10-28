@@ -11,9 +11,10 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/** Task 4 (unit tests): round keys, every round, and the whole block. */
 @DisplayName("Encryption (HbeaCipher): unit tests per round")
 class HbeaCipherTest {
-    private static final String OFFICIAL_EMAIL = "liglesias.ieu2024@student.ie.edu";
+    private static final String OFFICIAL_EMAIL = StudentConfig.EMAIL;
     private static final String OLIVIA_EMAIL = "oespineira.ieu2024@student.ie.edu";
     private static final String VECTOR_EMAIL = "student@student.ie.edu";
     private static final String FULL_MESSAGE = "Meet me at the library at 5pm!!!";
@@ -210,6 +211,33 @@ class HbeaCipherTest {
         }
 
         @Test
+        @DisplayName("A key generator that returns the wrong shape is rejected")
+        void badKeyGeneratorRejected() {
+            KeyGenerator tooFew = seed -> new int[3][32];          // lambda: KeyGenerator has one method
+            KeyGenerator tooShort = seed -> new int[8][16];
+            assertThrows(IllegalArgumentException.class,
+                    () -> new HbeaCipher(OFFICIAL_EMAIL, tooFew, new DesRoundFunction()));
+            assertThrows(IllegalArgumentException.class,
+                    () -> new HbeaCipher(OFFICIAL_EMAIL, tooShort, new DesRoundFunction()));
+        }
+
+        @Test
+        @DisplayName("No public method of HbeaCipher returns key material (encapsulation, Section 5.3)")
+        void noPublicKeyGetter() {
+            for (java.lang.reflect.Method m : HbeaCipher.class.getDeclaredMethods()) {
+                if (java.lang.reflect.Modifier.isPublic(m.getModifiers())) {
+                    assertFalse(m.getReturnType().isArray(), "Public method returns an array: " + m.getName());
+                }
+            }
+            for (java.lang.reflect.Field fld : HbeaCipher.class.getDeclaredFields()) {
+                if (!java.lang.reflect.Modifier.isStatic(fld.getModifiers())) {
+                    assertTrue(java.lang.reflect.Modifier.isPrivate(fld.getModifiers()), fld.getName() + " is not private");
+                    assertTrue(java.lang.reflect.Modifier.isFinal(fld.getModifiers()), fld.getName() + " is not final");
+                }
+            }
+        }
+
+        @Test
         @DisplayName("A missing key generator or round function is rejected")
         void missingPartsRejected() {
             assertThrows(IllegalArgumentException.class,
@@ -220,3 +248,34 @@ class HbeaCipherTest {
     }
 }
 
+/* Test results (JUnit 5):
+PASS  Encrypting a message > The ciphertext has 64 hex digits
+PASS  Encrypting a message > The ciphertext is different from the plaintext
+PASS  Encrypting a message > A key generator that returns the wrong shape is rejected
+PASS  Encrypting a message > A different key gives a different ciphertext
+PASS  Encrypting a message > No public method of HbeaCipher returns key material (encapsulation, Section 5.3)
+PASS  Encrypting a message > The same message and key always give the same ciphertext
+PASS  Encrypting a message > HbeaCipher can be used through the Cipher interface
+PASS  Encrypting a message > An invalid message is rejected before encrypting
+PASS  Encrypting a message > A missing key generator or round function is rejected
+PASS  Whole block: IP -> rounds -> swap -> IP^-1 > With the 16 DES subkeys the structure gives the real DES ciphertext 85E813540F0AB405
+PASS  Whole block: IP -> rounds -> swap -> IP^-1 > The first letter of my name, L, encrypts to the same block as the steps done one by one
+PASS  Each encryption round > In every round the new left half is the previous right half
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 0
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 1
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 2
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 3
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 4
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 5
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 6
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 7
+PASS  Each encryption round > Each round matches Olivia's RoundDemo (block "olivia  ") > round 8
+PASS  Each encryption round > A block that is not 64 bits is rejected
+PASS  Each encryption round > Round 1 of "Meet me " gives L1 = 00FE2100 and R1 = 0488C614 (spec)
+PASS  Each encryption round > After IP, block "Meet me " splits into L0 = 6F086F67 and R0 = 00FE2100 (spec)
+PASS  Round keys: RK(i) = E(KS(i)) > There are 8 round keys of 48 bits
+PASS  Round keys: RK(i) = E(KS(i)) > Every round key is the expansion of the matching key segment
+PASS  Round keys: RK(i) = E(KS(i)) > Asking for a round outside 1..8 is rejected
+PASS  Round keys: RK(i) = E(KS(i)) > RK1 for student@student.ie.edu is 358053CF7D00 (spec)
+28 tests successful, 0 failed
+*/

@@ -74,3 +74,12 @@ public final class HbeaTables {
         return S[box][row][col];
     }
 }
+
+/* Output: no main method; it is exercised by the tests and demos.
+Tables checked in BitUtilsTest against Section 7:
+PASS  initialPermutationMatchesTestVector()
+PASS  expansionOfKS1GivesRK1()
+PASS  finalPermutationUndoesInitialPermutation()
+PASS  block1MatchesTestVector()
+PASS  sBoxExampleFromSection44()
+*/

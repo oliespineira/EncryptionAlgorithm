@@ -7,8 +7,8 @@ import java.util.Arrays; // gives us copyOfRange for cutting the array into piec
 public class RoundDemo {
 
     public static void main(String[] args) {
-        String name = "olivia";//this is what is going to be scrambled
-        String seed = "oespineira.ieu2024@student.ie.edu";// this is the password the key is made from
+        String name = StudentConfig.FIRST_NAME;// this is what is going to be scrambled
+        String seed = StudentConfig.EMAIL;// this is the password the key is made from
 
         // Make an 8-character block (64 bits): pad with spaces or cut to 8
         String text = (name + "        ").substring(0, 8);// adds 8 spaces to the end,so the text is always long enough. and then we only keep the first 8 characters.
@@ -25,7 +25,7 @@ public class RoundDemo {
         int[] x = BitUtils.permute(block, HbeaTables.ip());// shuffles the 64 bits using the IP table. this is the 'Initial permutation'
         int[] left = Arrays.copyOfRange(x, 0, 32);// copies the first 32 bits into the left half of L0
         int[] right = Arrays.copyOfRange(x, 32, 64);//copies the seconf 32 bits into the right half
-        System.out.println("Round 0: L = " + BitUtils.toHex(left) + "  R = " + BitUtils.toHex(right));
+        System.out.println("After IP: L = " + BitUtils.toHex(left) + "  R = " + BitUtils.toHex(right));
 
         // 8 Feistel rounds
         for (int i = 0; i < 8; i++) {
@@ -40,15 +40,14 @@ public class RoundDemo {
 }
 
 /* Output:
-   Block "olivia  " = 6F6C697669612020
-Round 0: L = 3F080B35  R = 00FF1709
-Round 1: L = 00FF1709  R = E7F402F4
-Round 2: L = E7F402F4  R = F44F9E6E
-Round 3: L = F44F9E6E  R = 8BA0D670
-Round 4: L = 8BA0D670  R = 4065474E
-Round 5: L = 4065474E  R = 1B4E804E
-Round 6: L = 1B4E804E  R = B13647AD
-Round 7: L = B13647AD  R = 3FD76672
-Round 8: L = 3FD76672  R = 6C9E90B5
-
+Block "L       " = 4C20202020202020
+After IP: L = 01000100  R = 00FE0100
+Round 1: L = 00FE0100  R = EBE61324
+Round 2: L = EBE61324  R = 25B1464C
+Round 3: L = 25B1464C  R = 2581D1E9
+Round 4: L = 2581D1E9  R = E9AF82EF
+Round 5: L = E9AF82EF  R = 12CC6A2A
+Round 6: L = 12CC6A2A  R = 5AB1F3DF
+Round 7: L = 5AB1F3DF  R = 52251108
+Round 8: L = 52251108  R = 33016517
 */
